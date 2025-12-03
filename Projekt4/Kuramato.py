@@ -33,6 +33,19 @@ def dynamics_function(t, theta, K, omega_i):
     dtheta_dt = omega_i + coupling
     return dtheta_dt
 
+
+def rhs_function(t, theta, K, omega_i):
+    N = len(theta)
+
+
+    theta_diff = theta[None, :] - theta[:, None]
+
+    coupling_term = (K / N) * np.sum(np.sin(theta_diff), axis=1)
+
+    return omega_i + coupling_term
+
+
+
 # --- SYMULACJA (RK4), zwraca cały przebieg jeśli need_full=True ---
 def simulate(K, theta_0, omega_i, CONST, need_full=False):
     N = CONST["N"]
@@ -58,7 +71,7 @@ def simulate(K, theta_0, omega_i, CONST, need_full=False):
 
     for n in range(NT):
         t = Times[n]
-        func = lambda tt, th: dynamics_function(tt, th, K, omega_i)
+        func = lambda tt, th: rhs_function(tt, th, K, omega_i)
 
         k1 = func(t, theta)
         k2 = func(t + 0.5 * DT, theta + 0.5 * DT * k1)

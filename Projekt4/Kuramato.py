@@ -39,6 +39,16 @@ def rhs_function(t, theta, K, omega_i):
 
 
     theta_diff = theta[None, :] - theta[:, None]
+    # print(theta_diff.shape)
+    # theta_diff = np.zeros((N, N))
+
+    # print(theta.shape)
+    # for i in range(N):
+    #     for j in range(N):
+    #         if i != j:
+    #             theta_diff[i][j] = theta[j] - theta[i]
+    #
+    # print(theta_diff_np - theta_diff)
 
     coupling_term = (K / N) * np.sum(np.sin(theta_diff), axis=1)
 

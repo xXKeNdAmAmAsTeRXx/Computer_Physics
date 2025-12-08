@@ -120,11 +120,15 @@ def global_relaxation():
 # Uruchomienie Zadania 1
 V_global, S_global, Iter = global_relaxation()
 plt.plot(Iter, S_global)
+plt.title("Relaksacja Globalna")
+plt.xlabel("# Iterations")
+plt.ylabel("Sum")
 plt.xscale('log')
 plt.show()
 
 # Zadanie 2: Wykres mapy potencjału V
 plt.imshow(V_global.T, cmap='seismic')
+plt.title("Relaksacja Globalna - mapa potencjału")
 plt.colorbar()
 plt.show()
 
@@ -154,10 +158,10 @@ y = Y[1:-1, 1:-1]
 
 arrow_step = 4 # Wiekszy znaczy mniej
 plt.quiver(x[::arrow_step, ::arrow_step], y[::arrow_step, ::arrow_step], Ex[::arrow_step , ::arrow_step], Ey[::arrow_step , ::arrow_step], scale =50, headwidth =10)
+plt.title("Relaksacja Globalna - wykres Pola")
 plt.show()
 
 
-# TODO: Fix this function
 def local_relaxation(omega):
     global PARAMS, nanotube_mask, i_coords, j_coords
 
@@ -220,11 +224,14 @@ V_local, S_local, Iter_L = local_relaxation(omega=1.0)
 omegas = [1, 1.4, 1.8, 1.9]
 for o in omegas:
     V_local, S_local, Iter_L = local_relaxation(omega=o)
-    plt.plot(Iter_L, S_local, label=f'{o}')
+    plt.plot(Iter_L, S_local, label=f'w = {o}')
 
 
 
 # Wykresy
+plt.title("Relaksacja Lokalna")
+plt.xlabel("# Iterations")
+plt.ylabel("Sum")
 plt.xscale('log')
 plt.legend()
 plt.show()
@@ -232,6 +239,7 @@ plt.show()
 # mapa potencjału
 plt.imshow(V_local.T, cmap='seismic')
 plt.colorbar()
+plt.title(f"Relaksacja Lokalna - mapa potencjału w={omegas[-1]}")
 plt.show()
 
 
@@ -259,4 +267,5 @@ y = Y[1:-1, 1:-1]
 
 arrow_step = 4 # Wiekszy znaczy mniej
 plt.quiver(x[::arrow_step, ::arrow_step], y[::arrow_step, ::arrow_step], Ex[::arrow_step , ::arrow_step], Ey[::arrow_step , ::arrow_step], scale =50, headwidth =10)
+plt.title(f"Relaksacja Lokalna - pole w={omegas[-1]}")
 plt.show()

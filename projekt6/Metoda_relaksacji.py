@@ -224,7 +224,7 @@ V_local, S_local, Iter_L = local_relaxation(omega=1.0)
 omegas = [1, 1.4, 1.8, 1.9]
 for o in omegas:
     V_local, S_local, Iter_L = local_relaxation(omega=o)
-    plt.plot(Iter_L, S_local, label=f'w = {o}')
+    plt.plot(Iter_L, S_local, label=f'w = {o} iter: {Iter_L[-1]}')
 
 
 

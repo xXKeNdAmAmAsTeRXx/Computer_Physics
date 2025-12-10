@@ -8,7 +8,7 @@ PARAMS = {
     'dx': 0.1,
     'Vc': 10.0,
     'Rc': 1.0,
-    'epsilon': 1e-6,
+    'epsilon': 1e-8,
 }
 
 V = np.zeros((PARAMS['Nx']+1, PARAMS['Ny']+1))
@@ -120,7 +120,7 @@ def global_relaxation():
 # Uruchomienie Zadania 1
 V_global, S_global, Iter = global_relaxation()
 plt.plot(Iter, S_global)
-plt.title("Relaksacja Globalna")
+plt.title(f"Relaksacja Globalna Iter ={Iter[-1]}")
 plt.xlabel("# Iterations")
 plt.ylabel("Sum")
 plt.xscale('log')

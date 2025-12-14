@@ -94,36 +94,39 @@ def calculate_rho_tilde(rho: np.ndarray, k: int) -> np.ndarray:
 
     return rho_tilde
 
+
 @jit(nopython=True)
 def calculate_S(V: np.ndarray, rho_tilde: np.ndarray, k: int) -> float:
-    global D_x
+    global D_x, N  # Dodaj N, jest używane w range
 
-    sum = 0.0
+    S_sum = 0.0
 
-    facot = (k * D_x)**2 / 2.0
+    facot = (k * D_x) ** 2 / 2.0
     denom_factor = 1.0 / (2.0 * k * D_x)
 
-    for i in range(0, N - k, k):
-        for j in range(0, N - k, k):
+    for i in range(0, N - k, k):  # i = y-index
+        for j in range(0, N - k, k):  # j = x-index
+
             dV_dx_avg = (
-                (V[i + k, j] - V[i, j]) * denom_factor +
-                (V[i + k, j + k] - V[i, j + k]) * denom_factor
-            )
+                                (V[i, j + k] - V[i, j]) +
+                                (V[i + k, j + k] - V[i + k, j])
+                        ) * denom_factor
+
 
             dV_dy_avg = (
-                (V[i, j + k] - V[i, j]) * denom_factor +
-                (V[i + k, j + k] - V[i + k, j]) * denom_factor
-            )
+                                (V[i + k, j] - V[i, j]) +
+                                (V[i + k, j + k] - V[i, j + k])
+                        ) * denom_factor
 
-            term1 = dV_dx_avg**2 + dV_dy_avg**2
+            term1 = dV_dx_avg ** 2 + dV_dy_avg ** 2
 
             term2 = -rho_tilde[i, j] * V[i, j]
 
-            sum += (term1 + term2)
+            S_sum += (term1 + term2)
 
-    sum *= facot
+    S_sum *= facot
 
-    return sum
+    return S_sum
 
 
 @jit(nopython=True)
@@ -188,7 +191,7 @@ axs = axs.flatten()
 rho = generate_starting_rho()
 V = np.zeros((N+1, N+1))
 
-it_offset: int = 1
+end:int = 0
 for idx, k in enumerate([16, 8, 4, 2, 1]):
     V, sums = relax_local(V, k)
 
@@ -201,9 +204,11 @@ for idx, k in enumerate([16, 8, 4, 2, 1]):
     im = ax.imshow(V_lowres)
     cbar = fig.colorbar(im, ax=ax)
 
+
     ax = axs[5]
-    ax.plot(np.arange(len(sums)) + it_offset, sums, label=f"k={k}")
-    it_offset += len(sums)
+    ax.plot(np.arange(end,len(sums)), sums[end:], label=f"k={k}")
+    end = len(sums)
+
 
     if k > 1:
         V = interpolate(V, k)

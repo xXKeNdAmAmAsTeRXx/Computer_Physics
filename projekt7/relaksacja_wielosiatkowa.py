@@ -58,11 +58,7 @@ def avg_rho(k,rho, N, w):
     return new_rho
 
 
-w = calc_w(16)
-rho = avg_rho(16, rho,N,w)
 
-plt.imshow(rho, cmap='gray')
-plt.show()
 
 @jit(nopython=True)
 def relax(V, k, rho, dx, w):
@@ -72,6 +68,33 @@ def relax(V, k, rho, dx, w):
             V[i,j] = 0.25*(V[i+k, j] + V[i-k, j] + V[i, j+k] + V[i, j+k] + factor*rho[i,j])
 
     return V
+
+
+@jit(nopython=True)
+def S_integral(V, N,k, dx, rho):
+
+    List_of_sums = []
+    Sum = 0
+    factor = ((k*dx)**2)
+    denom = 2*k*dx
+
+
+    for it in range(2000):
+        for i in range(0, N-k+1):
+            for j in range(0, N-k+1):
+                term1 = ((V[i+k, i,j] - V[i,j])/denom + (V[i+k, j+k] - V[i, j+k])/denom)**2
+                term2 = ((V[i,j+k] - V[i,j+k])/denom + (V[i+k, j+k] - V[i+k, j])/denom)**2
+                Sum += (factor/2)*(term1 + term2) - factor*(rho[i,j]*V[i,j])
+
+
+
+        sum_prev = List_of_sums[:-1]
+        List_of_sums.append(Sum)
+        if it > 0 and np.abs((Sum - sum_prev)/sum_prev) < 1e-8:
+            return List_of_sums, it
+
+
+
 
 @jit(nopython=True)
 def interpolate(V, k):
@@ -95,3 +118,26 @@ def interpolate(V, k):
 
     return V
 
+K = [16, 8,4,2,1]
+
+
+k_sums = {}
+k_it = {}
+
+it_total=0
+it = 0
+
+fig, axs = plt.subplots(2, 3, figsize=(14, 10))
+sum_ax = ax[5]
+
+for k in K:
+    w = calc_w(k)
+    rho = avg_rho(k, rho, N, w)
+    V_grid = relax(V_grid,k,rho,w)
+
+    k_sums[str(k)], it = S_integral(V_grid, N, k, rho)
+
+    it_total += it
+    k_it[str(k)] = it_total
+
+    V_grid = interpolate(V_grid, k)

@@ -151,15 +151,16 @@ for k in K:
     it_k = 1
 
     while it_k < 2000:
+        it_k += 1
         V_grid = relax(V_grid, k, rho_t, D_x)
         Sum = single_integral(V_grid, N, k, D_x, rho_t)
-        List_of_sums.append(Sum)
 
+        List_of_sums.append(Sum)
         if np.abs((Sum - sum_prev) / sum_prev) < 1e-8:
             break
 
         sum_prev = Sum
-        it_k += 1
+
 
     it_total += it_k
     iters_total.append(it_total)

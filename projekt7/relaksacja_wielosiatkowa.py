@@ -85,4 +85,13 @@ def interpolate(V, k):
             V[i,j+half_k] = 0.5*(V[i,j] + V[i, j+k])
 
     ##Warunki brzegowe
-    
+    for i in range(0, N+1):
+        V[i,0] = 0
+        V[i, N] = 0
+
+    for j in range(0, N+1):
+        V[0,j] = 0
+        V[N,j] = 0
+
+    return V
+

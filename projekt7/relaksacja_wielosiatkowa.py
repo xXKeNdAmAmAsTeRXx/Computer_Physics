@@ -71,25 +71,29 @@ def relax(V, k, rho, dx, w):
 
 
 @jit(nopython=True)
+def single_integral(V, N,k, dx, rho):
+    Sum = 0
+    factor = ((k * dx) ** 2)
+    denom = 2 * k * dx
+    term1 = 0
+    term2 = 0
+
+    for i in range(0, N - k + 1):
+        for j in range(0, N - k + 1):
+            term1 = ((V[i + k, i, j] - V[i, j]) / denom + (V[i + k, j + k] - V[i, j + k]) / denom) ** 2
+            term2 = ((V[i, j + k] - V[i, j + k]) / denom + (V[i + k, j + k] - V[i + k, j]) / denom) ** 2
+            Sum += (factor / 2) * (term1 + term2) - factor * (rho[i, j] * V[i, j])
+    return Sum
+
 def S_integral(V, N,k, dx, rho):
 
     List_of_sums = []
     Sum = 0
-    factor = ((k*dx)**2)
-    denom = 2*k*dx
-
 
     for it in range(2000):
-        for i in range(0, N-k+1):
-            for j in range(0, N-k+1):
-                term1 = ((V[i+k, i,j] - V[i,j])/denom + (V[i+k, j+k] - V[i, j+k])/denom)**2
-                term2 = ((V[i,j+k] - V[i,j+k])/denom + (V[i+k, j+k] - V[i+k, j])/denom)**2
-                Sum += (factor/2)*(term1 + term2) - factor*(rho[i,j]*V[i,j])
-
-
-
-        sum_prev = List_of_sums[:-1]
         List_of_sums.append(Sum)
+        Sum = single_integral(V,N,k,dx,rho)
+        sum_prev = List_of_sums[-1]
         if it > 0 and np.abs((Sum - sum_prev)/sum_prev) < 1e-8:
             return List_of_sums, it
 
@@ -124,20 +128,33 @@ K = [16, 8,4,2,1]
 k_sums = {}
 k_it = {}
 
+current_sum = 0
 it_total=0
 it = 0
 
 fig, axs = plt.subplots(2, 3, figsize=(14, 10))
-sum_ax = ax[5]
+axs = axs.flatten()
+sum_ax = axs[5]
 
 for k in K:
+    print(f'calculating k={k}')
     w = calc_w(k)
     rho = avg_rho(k, rho, N, w)
-    V_grid = relax(V_grid,k,rho,w)
+    V_grid = relax(V_grid,k,rho,D_x,w)
 
-    k_sums[str(k)], it = S_integral(V_grid, N, k, rho)
+    current_sum, it = S_integral(V_grid, N, k,D_x, rho)
+    k_sums[k] = it
+
+    sum_ax.plt(len(current_sum), current_sum, label=f'k = {k}')
+
 
     it_total += it
-    k_it[str(k)] = it_total
+    k_it[k] = it_total
 
     V_grid = interpolate(V_grid, k)
+
+
+plt.legend()
+plt.show()
+
+print(k_it)

@@ -130,6 +130,8 @@ plt.show()
 plt.imshow(V_global.T, cmap='seismic')
 plt.title("Relaksacja Globalna - mapa potencjału")
 plt.colorbar()
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()
 
 # Zadanie 3: Wykres Pola
@@ -159,6 +161,8 @@ y = Y[1:-1, 1:-1]
 arrow_step = 4 # Wiekszy znaczy mniej
 plt.quiver(x[::arrow_step, ::arrow_step], y[::arrow_step, ::arrow_step], Ex[::arrow_step , ::arrow_step], Ey[::arrow_step , ::arrow_step], scale =50, headwidth =10)
 plt.title("Relaksacja Globalna - wykres Pola")
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()
 
 
@@ -240,6 +244,8 @@ plt.show()
 plt.imshow(V_local.T, cmap='seismic')
 plt.colorbar()
 plt.title(f"Relaksacja Lokalna - mapa potencjału w={omegas[-1]}")
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()
 
 
@@ -268,4 +274,6 @@ y = Y[1:-1, 1:-1]
 arrow_step = 4 # Wiekszy znaczy mniej
 plt.quiver(x[::arrow_step, ::arrow_step], y[::arrow_step, ::arrow_step], Ex[::arrow_step , ::arrow_step], Ey[::arrow_step , ::arrow_step], scale =50, headwidth =10)
 plt.title(f"Relaksacja Lokalna - pole w={omegas[-1]}")
+plt.xlabel('x')
+plt.ylabel('y')
 plt.show()

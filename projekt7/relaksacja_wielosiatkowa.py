@@ -15,8 +15,6 @@ V_grid = np.zeros((N + 1, N + 1))
 
 rho = np.zeros((N + 1, N + 1))
 
-# Poprawna inicjalizacja rho używając meshgrid (jak w poprawnym rozwiązaniu)
-# lub pozostawienie oryginalnej pętli (jak w Twoim rozwiązaniu) - pozostawiam pętlę dla minimalnej ingerencji
 for i in range(N + 1):
     for j in range(N + 1):
         term1 = np.exp(
@@ -66,7 +64,7 @@ def relax(V, k, rho, dx):
                     V[i + k, j]
                     + V[i - k, j]
                     + V[i, j + k]
-                    + V[i, j - k]  # Poprawione: było V[i, j+k]
+                    + V[i, j - k]
                     + factor * rho[i, j]
             )
 

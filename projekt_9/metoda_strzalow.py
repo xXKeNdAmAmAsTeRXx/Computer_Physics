@@ -2,93 +2,113 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import njit
 
-# Constants provided in the project description
+# --- Constants ---
 L = 10.0
 T = 1.0
 N = 100
 dx = L / (N + 1)
-eps = 1e-8
+# Use N+2 to include both boundaries 0 and L
+x_vals = np.linspace(0, L, N + 2)
 
 
 @njit
-def get_u_N(omega, rho_type, alpha=0.0):
-    """
-    Calculates the displacement at the last node u_N using the shooting method.
-    rho_type: 0 for constant rho=1, 1 for variable rho(x).
-    """
-    u_prev = 0.0  # u_0
-    u_curr = 1.0  # u_1
+def shoot_fast(omega, rho_type, alpha=40.0):
+    """Numba-optimized shooting method returning u for all N+2 nodes."""
+    u = np.zeros(N + 2)
+    u[0] = 0.0
+    u[1] = 1.0  # Initial 'shot' slope
+    for i in range(1, N + 1):
+        xi = i * dx
+        rho_i = 1.0 if rho_type == 0 else 1.0 + alpha * (xi - L / 2) ** 2
+        # Finite difference: u_{i+1} = 2u_i - u_{i-1} - dx^2 * (rho * w^2 / T) * u_i
+        u[i + 1] = 2 * u[i] - u[i - 1] - (dx ** 2) * (rho_i * (omega ** 2) / T) * u[i]
+    return u
 
-    for i in range(1, N):
-        x = i * dx
-        if rho_type == 0:
-            rho = 1.0
-        else:
-            rho = 1.0 + alpha * (x - L / 2) ** 2
 
-        # Recurrence relation: u_{i+1}
-        u_next = - (dx ** 2) * (rho * (omega ** 2) / T) * u_curr - u_prev + 2 * u_curr
+@njit
+def f_fast(omega, rho_type, alpha=40.0):
+    """Boundary value u_{N+1} (at x=L) which must be 0 for a valid mode."""
+    u_prev = 0.0
+    u_curr = 1.0
+    for i in range(1, N + 1):
+        xi = i * dx
+        rho_i = 1.0 if rho_type == 0 else 1.0 + alpha * (xi - L / 2) ** 2
+        u_next = 2 * u_curr - u_prev - (dx ** 2) * (rho_i * (omega ** 2) / T) * u_curr
         u_prev = u_curr
         u_curr = u_next
-
     return u_curr
 
 
 @njit
-def bisection(w1, w2, rho_type, alpha=0.0):
-    """Finds the root (zero) of u_N(omega) using the bisection method [cite: 29-35]."""
-    while abs(w1 - w2) > eps:
-        m = (w1 + w2) / 2.0
-        if get_u_N(w1, rho_type, alpha) * get_u_N(m, rho_type, alpha) < 0:
+def bisection(w1, w2, rho_type, alpha=40.0, eps=1e-8):
+    f1 = f_fast(w1, rho_type, alpha)
+    while abs(w2 - w1) > eps:
+        m = 0.5 * (w1 + w2)
+        fm = f_fast(m, rho_type, alpha)
+        if f1 * fm < 0:
             w2 = m
         else:
             w1 = m
-    return (w1 + w2) / 2.0
-
-
-def get_full_u(omega, rho_type, alpha=0.0):
-    """Generates the full array u(x) for plotting[cite: 27]."""
-    u = np.zeros(N + 1)
-    u[0] = 0.0
-    u[1] = 1.0
-    for i in range(1, N):
-        x = i * dx
-        rho = 1.0 if rho_type == 0 else 1.0 + alpha * (x - L / 2) ** 2
-        u[i + 1] = - (dx ** 2) * (rho * (omega ** 2) / T) * u[i] - u[i - 1] + 2 * u[i]
-    return u
+            f1 = fm
+    return 0.5 * (w1 + w2)
 
 
 # --- Task 1: Plot u_N(omega) ---
-omegas = np.linspace(0, 1.5, 500)
-u_N_vals = np.array([get_u_N(w, 0) for w in omegas])
+w_scan = np.linspace(0, 1.5, 1000)
+uN_vals = np.array([f_fast(w, 0) for w in w_scan])
 
-plt.figure(figsize=(10, 4))
-plt.plot(omegas, u_N_vals, label='$u_N(\omega)$')
+plt.figure(figsize=(7, 4))
+plt.plot(w_scan, uN_vals)
 plt.axhline(0, color='black', lw=1)
-plt.title("Task 1: $u_N(\omega)$ for constant $\\rho$")
+plt.title("Zadanie 1: $u_N(\omega)$ dla $N=100$")
 plt.xlabel("$\omega$")
 plt.ylabel("$u_N$")
-plt.grid()
+plt.ylim(-50, 50)  # Limit y to see crossings clearly like in lab.pdf
+plt.grid(True)
 plt.show()
 
-# --- Task 3 & 4: Find 4 lowest eigenvalues ---
-for label, rho_t, alpha_val in [("Constant $\\rho$", 0, 0.0), ("Variable $\\rho$", 1, 40.0)]:
-    print(f"\n--- {label} ---")
+# --- Task 2: Profile u(x) for rho=1 ---
+w1 = bisection(0.2, 0.4, 0)
+plt.figure(figsize=(7, 4))
+plt.plot(x_vals, shoot_fast(w1, 0), label=fr'$\omega_1 \approx {w1:.5f}$')
+plt.plot(x_vals, shoot_fast(w1 * 0.95, 0), label=fr'$0.95\omega_1$')
+plt.plot(x_vals, shoot_fast(w1 * 1.05, 0), label=fr'$1.05\omega_1$')
+plt.title("Zadanie 2: $u(x)$ dla $\\rho=1$")
+plt.xlabel("x")
+plt.ylabel("u(x)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# --- Task 3 & 4: Eigenvalues and Modes ---
+
+
+scenarios = [
+    ("Zadanie 3: $u(x)$ dla $\\rho=1$", 0, 1.5),
+    ("Zadanie 4: $u(x)$ dla $\\rho(x)=1+40(x-L/2)^2$", 1, 0.15)
+]
+
+for title, r_type, scan_max in scenarios:
+    # Find intervals for bisection
+    w_range = np.linspace(0.001, scan_max, 1000)
     roots = []
-    # Heuristic to find intervals for bisection by scanning
-    search_range = np.linspace(0.01, 2.0 if rho_t == 0 else 0.5, 1000)
-    for i in range(len(search_range) - 1):
-        if get_u_N(search_range[i], rho_t, alpha_val) * get_u_N(search_range[i + 1], rho_t, alpha_val) < 0:
-            root = bisection(search_range[i], search_range[i + 1], rho_t, alpha_val)
-            roots.append(root)
+    uN_scan = [f_fast(w, r_type) for w in w_range]
+    for i in range(len(w_range) - 1):
+        if uN_scan[i] * uN_scan[i + 1] < 0:
+            roots.append(bisection(w_range[i], w_range[i + 1], r_type))
             if len(roots) == 4: break
 
-    plt.figure()
+    plt.figure(figsize=(7, 4))
+    print(f"\n{title}:")
     for i, w in enumerate(roots):
-        print(f"Mode {i + 1}: omega = {w:.8f}")
-        u_plot = get_full_u(w, rho_t, alpha_val)
-        plt.plot(np.linspace(0, L, N + 1), u_plot, label=f"$\omega_{i + 1}$={w:.4f}")
+        print(f"  omega_{i + 1} = {w:.7f}")
+        u_profile = shoot_fast(w, r_type)
+        # To match the lab plots exactly, we plot the raw shooting profiles
+        plt.plot(x_vals, u_profile, label=fr'$\omega_{{{i + 1}}} = {w:.4f}$')
 
-    plt.title(f"First 4 Eigenmodes ({label})")
+    plt.title(title)
+    plt.xlabel("x")
+    plt.ylabel("u(x)")
     plt.legend()
+    plt.grid(True)
     plt.show()

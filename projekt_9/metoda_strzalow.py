@@ -54,17 +54,29 @@ def bisection(w1, w2, rho_type, alpha=40.0, eps=1e-8):
 
 
 # --- Task 1: Plot u_N(omega) ---
-w_scan = np.linspace(0, 1.5, 1000)
+w_scan = np.linspace(0, 2.0, 1000) # Extended range to see all 4 roots
 uN_vals = np.array([f_fast(w, 0) for w in w_scan])
 
 plt.figure(figsize=(7, 4))
-plt.plot(w_scan, uN_vals)
-plt.axhline(0, color='black', lw=1)
-plt.title("Zadanie 1: $u_N(\omega)$ dla $N=100$")
+plt.plot(w_scan, uN_vals, label='$u_N(\omega)$')
+plt.axhline(0, color='gray', linestyle='-', linewidth=0.8) # Reference line at u=0
+
+# Adding labels based on the lab document values for clarity
+plt.title("z.1: $u_{N}$ dla $N=100$")
 plt.xlabel("$\omega$")
 plt.ylabel("$u_N$")
-plt.ylim(-50, 50)  # Limit y to see crossings clearly like in lab.pdf
-plt.grid(True)
+
+# Setting limits to match the visual scale of the lab output
+plt.xlim(0, 2.0)
+plt.ylim(-100, 100)
+
+# Optional: Mark the zeros found in Task 3 to verify
+zeros = [0.3141463, 0.6282152, 0.942129, 1.2558104]
+for z in zeros:
+    plt.plot(z, 0, 'ro', markersize=4) # Red dots at zero crossings
+
+plt.grid(True, linestyle=':', alpha=0.6)
+plt.tight_layout()
 plt.show()
 
 # --- Task 2: Profile u(x) for rho=1 ---

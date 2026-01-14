@@ -67,26 +67,28 @@ def sphere_volume_MC(R:float, A:float, center:np.ndarray[float] ,N:int) -> tuple
     error = np.zeros(int(N / 100))
     std = np.zeros(int(N / 100))
 
-    for i in range(1, N+1):
-        # Random Point
-        new_point = np.random.uniform(0, A, size=3)
+    for i in range(100, N+1, 100):
+        sum = 0
+        sum_of_squares = 0
+        for j in range(1, i+1):
+            # Random Point
+            new_point = np.random.uniform(0, A, size=3)
 
-        # result
-        dist_sq = np.sum((new_point - center)**2, axis=0)
-        multiplyer = 1.0 if dist_sq <= R*R else 0.0
+            # result
+            dist_sq = np.sum((new_point - center)**2, axis=0)
+            multiplyer = 1.0 if dist_sq <= R*R else 0.0
 
-        # Sums
-        sum += sqaure_vol * multiplyer
-        sum_of_squares += (sqaure_vol * multiplyer)**2
+            # Sums
+            sum += sqaure_vol * multiplyer
+            sum_of_squares += (sqaure_vol * multiplyer)**2
 
         # Checkpoints
-        if i%100==0:
-            idx = int(i/100) - 1
-            step[idx] = i
-            expected[idx] = sum/i
-            variance[idx] = (sum_of_squares - (sum**2)/i)/(i-1)
-            std[idx] = np.sqrt(variance[idx]/i)
-            error[idx] = np.abs(sum/i - V)
+        idx = int(i/100) - 1
+        step[idx] = i
+        expected[idx] = sum/i
+        variance[idx] = (sum_of_squares - (sum**2)/i)/(i-1)
+        std[idx] = np.sqrt(variance[idx]/i)
+        error[idx] = np.abs(sum/i - V)
 
 
 
@@ -123,28 +125,32 @@ def sphere_interia_MC(R:float, A:float, center:np.ndarray, axis:np.ndarray, N:in
     error = np.zeros(int(N / 100))
     std = np.zeros(int(N / 100))
 
-    for i in range(1, N + 1):
-        new_point = np.random.uniform(0, A, size=3)
 
-        dist_sq = np.sum((new_point - center)**2)
-        multiplier = 1.0 if dist_sq <= R*R else 0.0
+    for i in range(100, N, 100):
+        sum = 0
+        sum_of_squares = 0
+        for j in range(i):
+            new_point = np.random.uniform(0, A, size=3)
 
-        dist_ax_sq = np.sum((new_point[0:2] - axis)**2)
-        val = multiplier * sqaure_vol * dist_ax_sq
+            dist_sq = np.sum((new_point - center)**2)
+            multiplier = 1.0 if dist_sq <= R*R else 0.0
 
-        sum_val += val
-        sum_of_squares += val**2
+            dist_ax_sq = np.sum((new_point[0:2] - axis)**2)
+            val = multiplier * sqaure_vol * dist_ax_sq
 
-        if i % 100 == 0:
-            idx = int(i / 100) - 1
-            step[idx] = i
-            expected[idx] = sum_val / i
-            if i > 1:
-                variance[idx] = (sum_of_squares - (sum_val**2) / i) / (i - 1)
-            else:
-                variance[idx] = 0.0
-            std[idx] = np.sqrt(variance[idx] / i)
-            error[idx] = np.abs(expected[idx] - V_exact)
+            sum_val += val
+            sum_of_squares += val**2
+
+
+        idx = int(i / 100) - 1
+        step[idx] = i
+        expected[idx] = sum_val / i
+        if i > 1:
+            variance[idx] = (sum_of_squares - (sum_val**2) / i) / (i - 1)
+        else:
+            variance[idx] = 0.0
+        std[idx] = np.sqrt(variance[idx] / i)
+        error[idx] = np.abs(expected[idx] - V_exact)
 
     return step, expected, std, error
 # %% [markdown]

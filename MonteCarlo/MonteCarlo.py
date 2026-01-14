@@ -1,10 +1,11 @@
 # %%
 import numpy as np
+from numpy import dtype, float64, ndarray
 
 CONSTS = {
     'R': 1.0,
     'CENTER': np.array([1.2, 1.2, 1.2]),
-    'N': int(10e5),
+    'N': int(1e5),
     'A': 2.4
 }
 # %% [markdown]
@@ -15,30 +16,29 @@ import matplotlib.pyplot as plt
 def plot(N:np.ndarray, expected:np.ndarray, std:np.ndarray, error, analitic, title) -> None:
     fig, ax = plt.subplots(3,1, figsize = (20,30))
     ax = ax.flatten()
-    ax[0].plot(N[1:], expected[1:], 'b-', label='MC')
+    ax[0].plot(N, expected, 'b-', label='MC')
     ax[0].set_title(title)
-    ax[0].axline((N[1], analitic), (N[-1], analitic), color='r', linestyle='-', label='Analitic')
+    ax[0].axline((N[0], analitic), (N[-1], analitic), color='r', linestyle='-', label='Analitic')
     ax[0].set_xlabel('N')
     ax[0].set_xscale('log')
     ax[0].set_ylabel('expected')
-    ax[0].set_xlim(N[1], N[-1])
+    ax[0].set_xlim(N[0], N[-1])
     ax[0].legend()
 
-    ax[1].plot(N[1:], error[1:], 'b-', label='MC')
-    ax[1].axline((N[1], 0), (N[-1], 0), color='r', linestyle='-', label='Analitic')
+    ax[1].plot(N, error, 'b-', label='MC')
+    ax[1].axline((N[0], 0), (N[-1], 0), color='r', linestyle='-', label='Analitic')
     ax[1].set_xlabel('N')
     ax[1].set_xscale('log')
     ax[1].set_ylabel('error')
-    ax[1].set_xlim(N[1], N[-1])
+    ax[1].set_xlim(N[0], N[-1])
     ax[1].legend()
-
 
     ax[2].plot(N[1:], std[1:], 'b-')
     ax[2].set_xlabel('N')
     ax[2].set_ylabel('std')
     ax[2].set_yscale('log')
     ax[2].set_xscale('log')
-    ax[2].set_xlim(N[1], N[-1])
+    ax[2].set_xlim(N[0], N[-1])
 
 
     plt.show()
@@ -46,7 +46,7 @@ def plot(N:np.ndarray, expected:np.ndarray, std:np.ndarray, error, analitic, tit
 # %% [markdown]
 # # Sphere Volume
 # %%
-from numba import jit
+from numba import jit, njit
 
 ## SEED
 np.random.seed = 42
@@ -55,7 +55,9 @@ def sphere_volume(R:float) -> float:
     return (4/3)*np.pi*R*R*R
 
 @jit(nopython=True)
-def sphere_volume_MC(R:float, A:float, center:np.ndarray[float] ,N:int) -> tuple[np.ndarray,np.ndarray,np.ndarray]:
+def sphere_volume_MC(R:float, A:float, center:np.ndarray[float] ,N:int) -> tuple[
+    ndarray[tuple[int], dtype[float64]], ndarray[tuple[int], dtype[float64]], ndarray[tuple[int], dtype[float64]],
+    ndarray[tuple[int], dtype[float64]]]:
     sqaure_vol:float = A**3
     sum:float = 0.0
     sum_of_squares:float = 0.0
@@ -82,6 +84,13 @@ def sphere_volume_MC(R:float, A:float, center:np.ndarray[float] ,N:int) -> tuple
             sum += sqaure_vol * multiplyer
             sum_of_squares += (sqaure_vol * multiplyer)**2
 
+        # points = np.random.uniform(0, A, size=(N, 3))
+        # dist_sq = np.sum((points - center)**2, axis=1)
+        # values = (dist_sq <= R**2).astype(np.float64) * sqaure_vol
+        # sum = np.sum(values)
+        # sum_of_squares = np.sum(values**2)
+
+
         # Checkpoints
         idx = int(i/100) - 1
         step[idx] = i
@@ -93,12 +102,10 @@ def sphere_volume_MC(R:float, A:float, center:np.ndarray[float] ,N:int) -> tuple
 
 
     return step, expected, std, error
-
-
 # %% [markdown]
 # ## Results
 # %%
-step, expected, std, error = sphere_volume_MC(CONSTS['R'], CONSTS['A'], CONSTS['CENTER'] ,CONSTS['N'])
+step, expected, std, error = sphere_volume_MC(CONSTS['R'], CONSTS['A'], CONSTS['CENTER'], CONSTS['N'])
 v = sphere_volume(CONSTS['R'])
 
 plot(step, expected, std, error, v, 'Sphere Volume')
@@ -110,7 +117,7 @@ import numpy as np
 from numba import jit
 
 def sphere_interia(R:float) -> float:
-    return (2/5)*(4/3)*np.pi*R*R*R*R*R
+    return (2/5)*(4/3)*np.pi*R**5
 
 @jit(nopython=True)
 def sphere_interia_MC(R:float, A:float, center:np.ndarray, axis:np.ndarray, N:int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -126,8 +133,8 @@ def sphere_interia_MC(R:float, A:float, center:np.ndarray, axis:np.ndarray, N:in
     std = np.zeros(int(N / 100))
 
 
-    for i in range(100, N, 100):
-        sum = 0
+    for i in range(100, N+1, 100):
+        sum_val = 0
         sum_of_squares = 0
         for j in range(i):
             new_point = np.random.uniform(0, A, size=3)
@@ -145,10 +152,7 @@ def sphere_interia_MC(R:float, A:float, center:np.ndarray, axis:np.ndarray, N:in
         idx = int(i / 100) - 1
         step[idx] = i
         expected[idx] = sum_val / i
-        if i > 1:
-            variance[idx] = (sum_of_squares - (sum_val**2) / i) / (i - 1)
-        else:
-            variance[idx] = 0.0
+        variance[idx] = (sum_of_squares - (sum_val**2) / i) / (i - 1)
         std[idx] = np.sqrt(variance[idx] / i)
         error[idx] = np.abs(expected[idx] - V_exact)
 

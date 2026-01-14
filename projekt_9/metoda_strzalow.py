@@ -10,7 +10,7 @@ dx = L / (N + 1)
 # Use N+2 to include both boundaries 0 and L
 x_vals = np.linspace(0, L, N + 2)
 
-
+# Wyznacza pełny kształt struny dla zadanej częstotliwości (pulsacji)
 @njit
 def shoot_fast(omega, rho_type, alpha=40.0):
     """Numba-optimized shooting method returning u for all N+2 nodes."""
@@ -24,7 +24,7 @@ def shoot_fast(omega, rho_type, alpha=40.0):
         u[i + 1] = 2 * u[i] - u[i - 1] - (dx ** 2) * (rho_i * (omega ** 2) / T) * u[i]
     return u
 
-
+# Zwraca wartość wychylenia na końcu struny
 @njit
 def f_fast(omega, rho_type, alpha=40.0):
     """Boundary value u_{N+1} (at x=L) which must be 0 for a valid mode."""
@@ -38,7 +38,7 @@ def f_fast(omega, rho_type, alpha=40.0):
         u_curr = u_next
     return u_curr
 
-
+# Algorytm bisekcji
 @njit
 def bisection(w1, w2, rho_type, alpha=40.0, eps=1e-8):
     f1 = f_fast(w1, rho_type, alpha)
@@ -54,6 +54,7 @@ def bisection(w1, w2, rho_type, alpha=40.0, eps=1e-8):
 
 
 # --- Task 1: Plot u_N(omega) ---
+# Przebieg funkcji błedu u(x)
 w_scan = np.linspace(0, 2.0, 1000) # Extended range to see all 4 roots
 uN_vals = np.array([f_fast(w, 0) for w in w_scan])
 
@@ -77,9 +78,11 @@ for z in zeros:
 
 plt.grid(True, linestyle=':', alpha=0.6)
 plt.tight_layout()
+plt.legend()
 plt.show()
 
 # --- Task 2: Profile u(x) for rho=1 ---
+# Miejsce zerowe i wychylenie +-5%
 w1 = bisection(0.2, 0.4, 0)
 plt.figure(figsize=(7, 4))
 plt.plot(x_vals, shoot_fast(w1, 0), label=fr'$\omega_1 \approx {w1:.5f}$')
@@ -93,6 +96,7 @@ plt.grid(True)
 plt.show()
 
 # --- Task 3 & 4: Eigenvalues and Modes ---
+# Wyszukiwanie miejsc zerowych metodą bisekcji
 
 
 scenarios = [
